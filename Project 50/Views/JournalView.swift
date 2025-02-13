@@ -3,35 +3,19 @@ import SwiftUI
 struct JournalView: View {
     @ObservedObject var viewModel: ChallengeViewModel
     @State private var journalContent: String = ""
-    @State private var selectedMood: Journal.Mood = .normal
     @Environment(\.dismiss) var dismiss
     @State private var showingSaveAlert = false
+    let existingJournal: Journal?
+    
+    init(viewModel: ChallengeViewModel, existingJournal: Journal? = nil) {
+        self.viewModel = viewModel
+        self.existingJournal = existingJournal
+        _journalContent = State(initialValue: existingJournal?.content ?? "")
+    }
     
     var body: some View {
         NavigationStack {
             Form {
-                Section(header: Text("今天的心情")) {
-                    HStack {
-                        ForEach(Journal.Mood.allCases, id: \.self) { mood in
-                            Button(action: {
-                                selectedMood = mood
-                            }) {
-                                VStack {
-                                    Image(systemName: mood.icon)
-                                        .font(.title2)
-                                    Text(mood.rawValue)
-                                        .font(.caption)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 8)
-                                .background(selectedMood == mood ? Color.accentColor.opacity(0.2) : Color.clear)
-                                .foregroundColor(selectedMood == mood ? .accentColor : .primary)
-                                .cornerRadius(8)
-                            }
-                        }
-                    }
-                }
-                
                 Section(header: Text("今天的感想")) {
                     TextEditor(text: $journalContent)
                         .frame(minHeight: 200)
@@ -58,11 +42,11 @@ struct JournalView: View {
                         }
                         .contentShape(Rectangle())
                     }
-                    .listRowBackground(Color.accentColor)
+                    .listRowBackground(Color.yellow)
                     .foregroundColor(.white)
                 }
             }
-            .navigationTitle("今日日记")
+            .navigationTitle(existingJournal != nil ? "编辑日记" : "今日日记")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -82,53 +66,56 @@ struct JournalView: View {
     }
     
     private func submitJournal() {
-        guard !journalContent.isEmpty else {
-            // 如果内容为空，至少需要选择一个心情
-            viewModel.addJournalEntry(content: "今天的心情：\(selectedMood.rawValue)", mood: selectedMood)
-            showingSaveAlert = true
-            return
-        }
+        guard !journalContent.isEmpty else { return }
         
-        viewModel.addJournalEntry(content: journalContent, mood: selectedMood)
+        if let existing = existingJournal {
+            viewModel.updateJournalEntry(existing, newContent: journalContent)
+        } else {
+            viewModel.addJournalEntry(content: journalContent)
+        }
         showingSaveAlert = true
     }
 }
 
 struct JournalDetailView: View {
     let journal: Journal
+    @ObservedObject var viewModel: ChallengeViewModel
     @Environment(\.dismiss) var dismiss
+    @State private var showingEditSheet = false
     
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack {
-                        Label("第\(journal.dayNumber)天", systemImage: "calendar")
-                        Spacer()
-                        Label(journal.mood.rawValue, systemImage: journal.mood.icon)
-                    }
-                    .font(.headline)
-                    
-                    Divider()
-                    
-                    Text(journal.content)
-                        .font(.body)
-                    
-                    Text(journal.date, style: .date)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    Label("第\(journal.dayNumber)天", systemImage: "calendar")
+                    Spacer()
                 }
-                .padding()
+                .font(.headline)
+                
+                Divider()
+                
+                Text(journal.content)
+                    .font(.body)
+                
+                Text(journal.date, style: .date)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
-            .navigationTitle("日记详情")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完成") {
-                        dismiss()
-                    }
+            .padding()
+        }
+        .navigationTitle("日记详情")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    showingEditSheet = true
+                }) {
+                    Text("编辑")
                 }
             }
+        }
+        .sheet(isPresented: $showingEditSheet) {
+            JournalView(viewModel: viewModel, existingJournal: journal)
         }
     }
 }

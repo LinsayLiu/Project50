@@ -2,6 +2,8 @@ import SwiftUI
 
 struct PanoramaView: View {
     @ObservedObject var viewModel: ChallengeViewModel
+    @State private var showingJournalTip = false
+    @AppStorage("hasShownJournalTip") private var hasShownJournalTip = false
     let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 7)
     
     var body: some View {
@@ -17,6 +19,42 @@ struct PanoramaView: View {
             .padding()
         }
         .navigationTitle("50天全景")
+        .overlay {
+            if showingJournalTip {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Text("点击卡片记录今天的感想")
+                            .font(.subheadline)
+                            .padding()
+                            .background(Color(.systemBackground))
+                            .cornerRadius(10)
+                            .shadow(radius: 3)
+                        Spacer()
+                    }
+                    .padding()
+                    .transition(.move(edge: .bottom))
+                }
+                .animation(.easeInOut, value: showingJournalTip)
+            }
+        }
+        .onAppear {
+            if !hasShownJournalTip {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    withAnimation {
+                        showingJournalTip = true
+                    }
+                    // 3秒后自动隐藏提示
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        withAnimation {
+                            showingJournalTip = false
+                            hasShownJournalTip = true
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -30,7 +68,7 @@ struct DayCell: View {
                 .fill(status.color.opacity(0.2))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(status.color, lineWidth: 1)
+                        .stroke(status.borderColor, lineWidth: status.borderWidth)
                 )
             
             VStack(spacing: 4) {
@@ -38,8 +76,8 @@ struct DayCell: View {
                     .font(.system(.body, design: .rounded))
                     .fontWeight(.bold)
                 
-                if case .completed(let mood) = status {
-                    Image(systemName: mood.icon)
+                if status.showCheckmark {
+                    Image(systemName: "checkmark")
                         .foregroundColor(status.color)
                 }
             }

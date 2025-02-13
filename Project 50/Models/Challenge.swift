@@ -7,6 +7,7 @@ struct Challenge: Identifiable, Codable {
     var tasks: [Task]
     var journals: [Journal]
     var status: ChallengeStatus
+    var completedDays: Set<Int> // 记录哪些天完成了所有任务
     
     enum ChallengeStatus: String, Codable {
         case ongoing = "进行中"
@@ -42,5 +43,11 @@ struct Challenge: Identifiable, Codable {
         self.tasks = tasks
         self.journals = []
         self.status = .ongoing
+        self.completedDays = []
+    }
+    
+    // 检查指定日期是否完成了所有任务
+    func isTasksCompleted(forDay day: Int) -> Bool {
+        completedDays.contains(day)
     }
 } 

@@ -12,6 +12,7 @@ class ChallengeViewModel: ObservableObject {
     
     init() {
         loadChallenge()
+        updateCurrentDay() // 初始化时更新当前天数
     }
     
     // MARK: - 数据持久化
@@ -26,6 +27,20 @@ class ChallengeViewModel: ObservableObject {
         if let challenge = currentChallenge,
            let data = try? JSONEncoder().encode(challenge) {
             userDefaults.set(data, forKey: challengeKey)
+        }
+    }
+    
+    // MARK: - 日期管理
+    private func updateCurrentDay() {
+        guard var challenge = currentChallenge else { return }
+        let calendar = Calendar.current
+        if let daysSinceStart = calendar.dateComponents([.day], from: challenge.startDate, to: Date()).day {
+            let newDay = daysSinceStart + 1 // 因为第一天是第1天，而不是第0天
+            if newDay != challenge.currentDay {
+                challenge.currentDay = min(newDay, 50) // 确保不超过50天
+                currentChallenge = challenge
+                saveChallenge()
+            }
         }
     }
     
@@ -46,14 +61,16 @@ class ChallengeViewModel: ObservableObject {
         guard var challenge = currentChallenge else { return }
         if let index = challenge.tasks.firstIndex(where: { $0.id == task.id }) {
             challenge.tasks[index].isCompleted.toggle()
-            currentChallenge = challenge
-            saveChallenge()
             
             // 检查是否所有任务都完成
-            if challenge.isTodayCompleted {
-                // 显示完成动画或提示
-                // TODO: 实现完成动画
+            if challenge.tasks.allSatisfy({ $0.isCompleted }) {
+                challenge.completedDays.insert(challenge.currentDay)
+            } else {
+                challenge.completedDays.remove(challenge.currentDay)
             }
+            
+            currentChallenge = challenge
+            saveChallenge()
         }
     }
     
@@ -67,30 +84,35 @@ class ChallengeViewModel: ObservableObject {
     }
     
     // MARK: - 日记管理
-    func addJournalEntry(content: String, mood: Journal.Mood) {
+    func addJournalEntry(content: String) {
         guard var challenge = currentChallenge else { return }
-        let journal = Journal(date: Date(), content: content, mood: mood, dayNumber: challenge.currentDay)
-        challenge.journals.append(journal)
+        let journal = Journal(date: Date(), content: content, dayNumber: challenge.currentDay)
         
-        if challenge.isTodayCompleted {
-            challenge.currentDay += 1
-            if challenge.currentDay > 50 {
-                challenge.status = .completed
-            }
+        // 如果已经存在当天的日记，就更新它
+        if let index = challenge.journals.firstIndex(where: { $0.dayNumber == challenge.currentDay }) {
+            challenge.journals[index] = journal
+        } else {
+            challenge.journals.append(journal)
         }
         
         currentChallenge = challenge
         saveChallenge()
     }
     
-    // MARK: - 状态检查
-    func checkChallengeStatus() {
+    func updateJournalEntry(_ journal: Journal, newContent: String) {
         guard var challenge = currentChallenge else { return }
-        if challenge.isFailed {
-            challenge.status = .failed
+        if let index = challenge.journals.firstIndex(where: { $0.id == journal.id }) {
+            var updatedJournal = journal
+            updatedJournal.content = newContent
+            challenge.journals[index] = updatedJournal
             currentChallenge = challenge
             saveChallenge()
         }
+    }
+    
+    // MARK: - 状态检查
+    func checkChallengeStatus() {
+        updateCurrentDay() // 每次检查状态时更新当前天数
     }
     
     // MARK: - 辅助方法
@@ -99,37 +121,74 @@ class ChallengeViewModel: ObservableObject {
     }
     
     func getDayStatus(day: Int) -> DayStatus {
-        guard let challenge = currentChallenge else { return .upcoming }
+        guard let challenge = currentChallenge else { return .init(taskState: .upcoming, hasJournal: false) }
+        
+        // 1. 判断日记状态（只需要检查这一天是否有日记）
+        let hasJournal = getJournal(for: day) != nil
+        
+        // 2. 判断任务状态
+        let taskState: TaskState
         
         if day > challenge.currentDay {
-            return .upcoming
+            // 未来日期
+            taskState = .upcoming
+        } else if day == challenge.currentDay {
+            // 当天 - 根据任务完成情况返回不同状态
+            if challenge.isTasksCompleted(forDay: day) {
+                taskState = .completed
+            } else {
+                taskState = .current
+            }
+        } else {
+            // 过去的日期
+            if challenge.isTasksCompleted(forDay: day) {
+                taskState = .completed
+            } else {
+                taskState = .failed
+            }
         }
         
-        if let journal = getJournal(for: day) {
-            return .completed(mood: journal.mood)
-        }
-        
-        if day == challenge.currentDay {
-            return .current
-        }
-        
-        return .failed
+        return DayStatus(taskState: taskState, hasJournal: hasJournal)
     }
 }
 
 // MARK: - 辅助类型
-enum DayStatus {
-    case upcoming
-    case current
-    case completed(mood: Journal.Mood)
-    case failed
+enum TaskState {
+    case upcoming   // 未来日期
+    case current    // 当前日期（未完成）
+    case completed  // 任务已完成
+    case failed     // 过去日期（未完成）
+}
+
+struct DayStatus {
+    let taskState: TaskState
+    let hasJournal: Bool
     
     var color: Color {
-        switch self {
-        case .upcoming: return .gray
-        case .current: return .yellow
-        case .completed: return .green
-        case .failed: return .red
+        switch taskState {
+        case .upcoming:
+            return .gray
+        case .current:
+            return .yellow
+        case .completed:
+            return .yellow.opacity(0.8)
+        case .failed:
+            return .red
         }
+    }
+    
+    var borderColor: Color {
+        if hasJournal {
+            return .yellow.opacity(0.9)
+        }
+        return color
+    }
+    
+    var showCheckmark: Bool {
+        taskState == .completed
+    }
+    
+    var borderWidth: CGFloat {
+        hasJournal ? 2 : 1
     }
 } 

@@ -28,7 +28,7 @@ struct ContentView: View {
         }
         .sheet(item: $viewModel.selectedDay) { selectedDay in
             if let journal = viewModel.getJournal(for: selectedDay.id) {
-                JournalDetailView(journal: journal)
+                JournalDetailView(journal: journal, viewModel: viewModel)
             } else {
                 JournalView(viewModel: viewModel)
             }
