@@ -8,14 +8,34 @@
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var viewModel = ChallengeViewModel()
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView {
+            NavigationView {
+                TaskListView(viewModel: viewModel)
+            }
+            .tabItem {
+                Label("今日任务", systemImage: "list.bullet")
+            }
+            
+            NavigationView {
+                PanoramaView(viewModel: viewModel)
+            }
+            .tabItem {
+                Label("全景视图", systemImage: "calendar")
+            }
         }
-        .padding()
+        .sheet(item: $viewModel.selectedDay) { selectedDay in
+            if let journal = viewModel.getJournal(for: selectedDay.id) {
+                JournalDetailView(journal: journal)
+            } else {
+                JournalView(viewModel: viewModel)
+            }
+        }
+        .onAppear {
+            viewModel.checkChallengeStatus()
+        }
     }
 }
 
