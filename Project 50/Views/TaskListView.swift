@@ -2,6 +2,8 @@ import SwiftUI
 
 struct TaskListView: View {
     @ObservedObject var viewModel: ChallengeViewModel
+    @State private var editingTask: Task?
+    @State private var editingDescription: String = ""
     
     var body: some View {
         List {
@@ -10,6 +12,15 @@ struct TaskListView: View {
                     ForEach(challenge.tasks) { task in
                         TaskRow(task: task) {
                             viewModel.toggleTask(task)
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button {
+                                editingTask = task
+                                editingDescription = task.description
+                            } label: {
+                                Label("编辑", systemImage: "pencil")
+                            }
+                            .tint(.blue)
                         }
                     }
                 } header: {
@@ -35,6 +46,31 @@ struct TaskListView: View {
         .navigationTitle("今日任务")
         .sheet(isPresented: $viewModel.showingNewChallengeSheet) {
             NewChallengeView(viewModel: viewModel)
+        }
+        .sheet(item: $editingTask) { task in
+            NavigationStack {
+                Form {
+                    Section(header: Text("任务描述")) {
+                        TextEditor(text: $editingDescription)
+                            .frame(minHeight: 100)
+                    }
+                }
+                .navigationTitle(task.title)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("取消") {
+                            editingTask = nil
+                        }
+                    }
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("保存") {
+                            viewModel.updateTaskDescription(task, newDescription: editingDescription)
+                            editingTask = nil
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -57,6 +57,15 @@ class ChallengeViewModel: ObservableObject {
         }
     }
     
+    func updateTaskDescription(_ task: Task, newDescription: String) {
+        guard var challenge = currentChallenge else { return }
+        if let index = challenge.tasks.firstIndex(where: { $0.id == task.id }) {
+            challenge.tasks[index].description = newDescription
+            currentChallenge = challenge
+            saveChallenge()
+        }
+    }
+    
     // MARK: - 日记管理
     func addJournalEntry(content: String, mood: Journal.Mood) {
         guard var challenge = currentChallenge else { return }
