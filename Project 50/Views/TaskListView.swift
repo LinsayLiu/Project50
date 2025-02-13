@@ -4,6 +4,8 @@ struct TaskListView: View {
     @ObservedObject var viewModel: ChallengeViewModel
     @State private var editingTask: Task?
     @State private var editingDescription: String = ""
+    @State private var showingEditTip = false
+    @AppStorage("hasShownEditTip") private var hasShownEditTip = false
     
     var body: some View {
         List {
@@ -74,6 +76,43 @@ struct TaskListView: View {
             }
         }
         .tint(.yellow)
+        .overlay {
+            if showingEditTip {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Image(systemName: "arrow.left")
+                            .imageScale(.large)
+                        Text("右滑任务卡片可以修改任务内容")
+                            .font(.subheadline)
+                            .padding()
+                            .background(Color(.systemBackground))
+                            .cornerRadius(10)
+                            .shadow(radius: 3)
+                        Spacer()
+                    }
+                    .padding()
+                    .transition(.move(edge: .bottom))
+                }
+                .animation(.easeInOut, value: showingEditTip)
+            }
+        }
+        .onAppear {
+            if !hasShownEditTip && viewModel.currentChallenge != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    withAnimation {
+                        showingEditTip = true
+                    }
+                    // 3秒后自动隐藏提示
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        withAnimation {
+                            showingEditTip = false
+                            hasShownEditTip = true
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
