@@ -127,7 +127,7 @@ enum DayStatus {
     var color: Color {
         switch self {
         case .upcoming: return .gray
-        case .current: return .blue
+        case .current: return .yellow
         case .completed: return .green
         case .failed: return .red
         }

@@ -20,7 +20,7 @@ struct TaskListView: View {
                             } label: {
                                 Label("编辑", systemImage: "pencil")
                             }
-                            .tint(.blue)
+                            .tint(.yellow)
                         }
                     }
                 } header: {
@@ -39,6 +39,7 @@ struct TaskListView: View {
                         viewModel.showingNewChallengeSheet = true
                     }) {
                         Label("开始新的挑战", systemImage: "plus.circle.fill")
+                            .foregroundColor(.yellow)
                     }
                 }
             }
@@ -72,6 +73,7 @@ struct TaskListView: View {
                 }
             }
         }
+        .tint(.yellow)
     }
 }
 
@@ -82,7 +84,7 @@ struct TaskRow: View {
     var body: some View {
         HStack {
             Image(systemName: task.category.icon)
-                .foregroundColor(.accentColor)
+                .foregroundColor(.yellow)
                 .frame(width: 30)
             
             VStack(alignment: .leading, spacing: 4) {
@@ -128,6 +130,7 @@ struct NewChallengeView: View {
                             )) {
                                 Label(category.rawValue, systemImage: category.icon)
                             }
+                            .tint(.yellow)
                         }
                     }
                 }
@@ -144,6 +147,7 @@ struct NewChallengeView: View {
                 }
                 .disabled(selectedTasks.isEmpty)
             )
+            .tint(.yellow)
         }
     }
 }

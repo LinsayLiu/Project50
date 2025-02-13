@@ -36,6 +36,8 @@ struct ContentView: View {
         .onAppear {
             viewModel.checkChallengeStatus()
         }
+        .tint(.yellow)
+        .accentColor(.yellow) // 用于支持较老版本的iOS
     }
 }
 
