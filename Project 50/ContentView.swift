@@ -1,10 +1,3 @@
-//
-//  ContentView.swift
-//  Project 50
-//
-//  Created by Linyi Liu on 2025/2/13.
-//
-
 import SwiftUI
 
 struct ContentView: View {
@@ -12,14 +5,14 @@ struct ContentView: View {
     
     var body: some View {
         TabView {
-            NavigationView {
+            NavigationStack {
                 TaskListView(viewModel: viewModel)
             }
             .tabItem {
                 Label("今日任务", systemImage: "list.bullet")
             }
             
-            NavigationView {
+            NavigationStack {
                 PanoramaView(viewModel: viewModel)
             }
             .tabItem {
@@ -27,20 +20,16 @@ struct ContentView: View {
             }
         }
         .sheet(item: $viewModel.selectedDay) { selectedDay in
-            if let journal = viewModel.getJournal(for: selectedDay.id) {
-                JournalDetailView(journal: journal, viewModel: viewModel)
+            if let memo = viewModel.getMemo(for: selectedDay.id) {
+                MemoDetailView(memo: memo, cardNumber: selectedDay.id, viewModel: viewModel)
             } else {
-                JournalView(viewModel: viewModel)
+                MemoView(viewModel: viewModel, cardNumber: selectedDay.id)
             }
         }
         .onAppear {
             viewModel.checkChallengeStatus()
         }
         .tint(.yellow)
-        .accentColor(.yellow) // 用于支持较老版本的iOS
+        .accentColor(.yellow)
     }
-}
-
-#Preview {
-    ContentView()
 }
