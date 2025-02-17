@@ -32,15 +32,23 @@ class ChallengeViewModel: ObservableObject {
     
     // MARK: - 日期管理
     private func updateCurrentDay() {
-        guard var challenge = currentChallenge else { return }
-        let calendar = Calendar.current
-        if let daysSinceStart = calendar.dateComponents([.day], from: challenge.startDate, to: Date()).day {
-            let newDay = daysSinceStart + 1 // 因为第一天是第1天，而不是第0天
-            if newDay != challenge.currentDay {
-                challenge.currentDay = min(newDay, 50) // 确保不超过50天
-                currentChallenge = challenge
-                saveChallenge()
+    guard var challenge = currentChallenge else { return }
+    let calendar = Calendar.current
+    if let daysSinceStart = calendar.dateComponents([.day], from: challenge.startDate, to: Date()).day {
+        let newDay = daysSinceStart + 1 // 因为第一天是第1天，而不是第0天
+        if newDay != challenge.currentDay {
+            // 1. 更新天数
+            challenge.currentDay = min(newDay, 50) // 确保不超过50天
+            
+            // 2. 重置所有任务状态
+            for i in 0..<challenge.tasks.count {
+                challenge.tasks[i].isCompleted = false
             }
+            
+            // 3. 保存更改
+            currentChallenge = challenge
+            saveChallenge()
+          }   
         }
     }
     
