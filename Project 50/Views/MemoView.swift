@@ -54,6 +54,14 @@ struct MemoView: View {
                         dismiss()
                     }
                 }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.gray)
+                    }
+                }
             }
             .alert("保存成功", isPresented: $showingSaveAlert) {
                 Button("确定") {
@@ -80,29 +88,41 @@ struct MemoDetailView: View {
     @State private var showingEditSheet = false
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    Label("第\(cardNumber)天", systemImage: "note.text")
-                    Spacer()
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        Label("第\(cardNumber)天", systemImage: "note.text")
+                        Spacer()
+                    }
+                    .font(.headline)
+                    
+                    Divider()
+                    
+                    Text(memo.content)
+                        .font(.body)
                 }
-                .font(.headline)
-                
-                Divider()
-                
-                Text(memo.content)
-                    .font(.body)
+                .padding()
             }
-            .padding()
-        }
-        .navigationTitle("备注详情")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                    showingEditSheet = true
-                }) {
-                    Text("编辑")
+            .navigationTitle("备注详情")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    HStack(spacing: 16) {
+                        Button(action: {
+                            showingEditSheet = true
+                        }) {
+                            Image(systemName: "pencil.circle.fill")
+                                .foregroundColor(.yellow)
+                        }
+                        
+                        Button {
+                            dismiss()
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.gray)
+                        }
+                    }
                 }
             }
         }
