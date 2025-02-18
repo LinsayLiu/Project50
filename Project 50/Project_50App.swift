@@ -17,8 +17,8 @@ struct Project_50App: App {
             ContentView()
                 .environmentObject(viewModel)
         }
-        .onChange(of: scenePhase) { phase in
-            if phase == .active {
+        .onChange(of: scenePhase) { oldPhase, newPhase in
+            if newPhase == .active {
                 viewModel.sceneDidBecomeActive()
             }
         }
