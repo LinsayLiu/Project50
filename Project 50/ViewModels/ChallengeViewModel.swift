@@ -6,6 +6,7 @@ class ChallengeViewModel: ObservableObject {
     @Published var showingNewChallengeSheet = false
     @Published var showingMemoSheet = false
     @Published var selectedDay: SelectedDay?
+    @Published var shouldShowEditTip = false
     
     private let userDefaults = UserDefaults.standard
     private let challengeKey = "current_challenge"
@@ -61,6 +62,7 @@ class ChallengeViewModel: ObservableObject {
     // MARK: - 挑战管理
     func startNewChallenge(with tasks: [Task]) {
         currentChallenge = Challenge(tasks: tasks)
+        shouldShowEditTip = true // 新建挑战时设置显示提示
         saveChallenge()
     }
     
@@ -68,6 +70,10 @@ class ChallengeViewModel: ObservableObject {
         if let tasks = currentChallenge?.tasks {
             startNewChallenge(with: tasks.map { Task(title: $0.title, description: $0.description, category: $0.category) })
         }
+    }
+    
+    func hideEditTip() {
+        shouldShowEditTip = false
     }
     
     // MARK: - 任务管理

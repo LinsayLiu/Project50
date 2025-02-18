@@ -4,8 +4,6 @@ struct TaskListView: View {
     @ObservedObject var viewModel: ChallengeViewModel
     @State private var editingTask: Task?
     @State private var editingDescription: String = ""
-    @State private var showingEditTip = false
-    @AppStorage("hasShownEditTip") private var hasShownEditTip = false
     
     var body: some View {
         List {
@@ -77,7 +75,7 @@ struct TaskListView: View {
         }
         .tint(.yellow)
         .overlay {
-            if showingEditTip {
+            if viewModel.shouldShowEditTip {
                 VStack {
                     Spacer()
                     HStack {
@@ -96,18 +94,12 @@ struct TaskListView: View {
         }
         .onAppear {
             viewModel.checkChallengeStatus()
-            if !hasShownEditTip && viewModel.currentChallenge != nil {
-                let calendar = Calendar.current
-                if let challengeStartDate = viewModel.currentChallenge?.startDate,
-                   let minutesSinceStart = calendar.dateComponents([.minute], from: challengeStartDate, to: Date()).minute,
-                   minutesSinceStart < 1 {
-                    showingEditTip = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                        withAnimation {
-                            showingEditTip = false
-                            hasShownEditTip = true
-                        }
-                    }
+        }
+        .onChange(of: viewModel.shouldShowEditTip) { oldValue, newValue in
+            if newValue {
+                // 3秒后自动隐藏提示
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    viewModel.hideEditTip()
                 }
             }
         }
@@ -148,7 +140,6 @@ struct NewChallengeView: View {
     @ObservedObject var viewModel: ChallengeViewModel
     @Environment(\.dismiss) var dismiss
     @State private var selectedTasks: Set<Task.TaskCategory> = Set(Task.TaskCategory.allCases)
-    @AppStorage("hasShownEditTip") private var hasShownEditTip = false
     
     var body: some View {
         NavigationView {
@@ -181,7 +172,6 @@ struct NewChallengeView: View {
                 trailing: Button("开始") {
                     let tasks = Task.templates.filter { selectedTasks.contains($0.category) }
                     viewModel.startNewChallenge(with: tasks)
-                    hasShownEditTip = false // 重置提示状态，确保新挑战开始时会显示提示
                     dismiss()
                 }
                 .disabled(selectedTasks.isEmpty)
