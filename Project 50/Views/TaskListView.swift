@@ -4,6 +4,7 @@ struct TaskListView: View {
     @ObservedObject var viewModel: ChallengeViewModel
     @State private var editingTask: Task?
     @State private var editingDescription: String = ""
+    @State private var showingRestartAlert = false
     
     var body: some View {
         List {
@@ -31,6 +32,19 @@ struct TaskListView: View {
                         Text("连续打卡\(challenge.consecutiveDays)天")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
+                    }
+                }
+                
+                Section {
+                    Button(action: {
+                        showingRestartAlert = true
+                    }) {
+                        HStack {
+                            Spacer()
+                            Text("重启挑战")
+                                .foregroundColor(.red)
+                            Spacer()
+                        }
                     }
                 }
             } else {
@@ -72,6 +86,15 @@ struct TaskListView: View {
                     }
                 }
             }
+        }
+        .alert("确认重启挑战", isPresented: $showingRestartAlert) {
+            Button("取消", role: .cancel) { }
+            Button("确认", role: .destructive) {
+                viewModel.resetChallenge()
+                viewModel.showingNewChallengeSheet = true
+            }
+        } message: {
+            Text("重启后将清除所有进度，确定要重新开始吗？")
         }
         .tint(.yellow)
         .overlay {

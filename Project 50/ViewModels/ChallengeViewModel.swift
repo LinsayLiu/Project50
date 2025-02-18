@@ -67,9 +67,10 @@ class ChallengeViewModel: ObservableObject {
     }
     
     func resetChallenge() {
-        if let tasks = currentChallenge?.tasks {
-            startNewChallenge(with: tasks.map { Task(title: $0.title, description: $0.description, category: $0.category) })
-        }
+        // 清除当前挑战数据
+        currentChallenge = nil
+        // 清除本地存储
+        userDefaults.removeObject(forKey: challengeKey)
     }
     
     func hideEditTip() {
