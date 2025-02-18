@@ -18,7 +18,7 @@ struct PanoramaView: View {
             }
             .padding()
         }
-        .navigationTitle("50天全景")
+        .navigationTitle("50天挑战")
         .overlay {
             if showingJournalTip {
                 VStack {
