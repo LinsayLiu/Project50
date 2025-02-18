@@ -5,7 +5,7 @@ struct Challenge: Identifiable, Codable {
     var startDate: Date
     var currentDay: Int
     var tasks: [Task]
-    var journals: [Journal]
+    var memos: [Memo]  // 将journals改为memos
     var status: ChallengeStatus
     var completedDays: Set<Int> // 记录哪些天完成了所有任务
     
@@ -17,17 +17,9 @@ struct Challenge: Identifiable, Codable {
     
     // 计算属性：当前挑战是否失败
     var isFailed: Bool {
-        if let lastCompletedDay = journals.last?.dayNumber {
-            let calendar = Calendar.current
-            let daysSinceStart = calendar.dateComponents([.day], from: startDate, to: Date()).day ?? 0
-            return daysSinceStart > lastCompletedDay + 1
-        }
-        return false
-    }
-    
-    // 计算属性：今天的任务是否全部完成
-    var isTodayCompleted: Bool {
-        tasks.allSatisfy { $0.isCompleted }
+        let calendar = Calendar.current
+        let daysSinceStart = calendar.dateComponents([.day], from: startDate, to: Date()).day ?? 0
+        return daysSinceStart > currentDay + 1
     }
     
     // 计算属性：获取连续完成天数
@@ -41,7 +33,7 @@ struct Challenge: Identifiable, Codable {
         self.startDate = Date()
         self.currentDay = 1
         self.tasks = tasks
-        self.journals = []
+        self.memos = []
         self.status = .ongoing
         self.completedDays = []
     }
@@ -50,4 +42,4 @@ struct Challenge: Identifiable, Codable {
     func isTasksCompleted(forDay day: Int) -> Bool {
         completedDays.contains(day)
     }
-} 
+}

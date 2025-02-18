@@ -40,6 +40,7 @@ struct PanoramaView: View {
             }
         }
         .onAppear {
+            viewModel.checkChallengeStatus()
             if !hasShownJournalTip {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     withAnimation {

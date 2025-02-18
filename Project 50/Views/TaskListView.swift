@@ -98,6 +98,7 @@ struct TaskListView: View {
             }
         }
         .onAppear {
+            viewModel.checkChallengeStatus()
             if !hasShownEditTip && viewModel.currentChallenge != nil {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     withAnimation {

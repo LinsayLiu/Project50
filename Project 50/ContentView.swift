@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var viewModel = ChallengeViewModel()
+    @EnvironmentObject var viewModel: ChallengeViewModel
     
     var body: some View {
         TabView {
