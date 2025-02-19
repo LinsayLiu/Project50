@@ -10,11 +10,13 @@ class ChallengeViewModel: ObservableObject {
     
     private let userDefaults = UserDefaults.standard
     private let challengeKey = "current_challenge"
+    private let lastUpdateTimeKey = "last_update_time"
     private var timer: Timer?
     
     init() {
         loadChallenge()
-        updateCurrentDay()
+        // 启动时强制检查
+        forceUpdate()
         setupTimer()
     }
     
@@ -38,23 +40,50 @@ class ChallengeViewModel: ObservableObject {
     }
     
     // MARK: - 日期管理
+    private func saveLastUpdateTime() {
+        userDefaults.set(Date(), forKey: lastUpdateTimeKey)
+    }
+    
+    private func needsUpdate() -> Bool {
+        guard let lastUpdate = userDefaults.object(forKey: lastUpdateTimeKey) as? Date else {
+            return true
+        }
+        
+        let calendar = Calendar.current
+        // 如果最后更新时间和当前时间不在同一天，就需要更新
+        return !calendar.isDate(lastUpdate, inSameDayAs: Date())
+    }
+    
+    private func forceUpdate() {
+        // 清除最后更新时间，强制进行更新
+        userDefaults.removeObject(forKey: lastUpdateTimeKey)
+        updateCurrentDay()
+    }
+    
     private func updateCurrentDay() {
         guard var challenge = currentChallenge else { return }
-        let calendar = Calendar.current
-        if let daysSinceStart = calendar.dateComponents([.day], from: challenge.startDate, to: Date()).day {
-            let newDay = daysSinceStart + 1 // 因为第一天是第1天，而不是第0天
-            if newDay != challenge.currentDay {
-                // 1. 更新天数
-                challenge.currentDay = min(newDay, 50) // 确保不超过50天
-                
-                // 2. 重置所有任务状态
-                for i in 0..<challenge.tasks.count {
-                    challenge.tasks[i].isCompleted = false
+        
+        // 检查是否需要更新
+        if needsUpdate() {
+            let calendar = Calendar.current
+            if let daysSinceStart = calendar.dateComponents([.day], from: challenge.startDate, to: Date()).day {
+                let newDay = daysSinceStart + 1 // 因为第一天是第1天，而不是第0天
+                if newDay != challenge.currentDay {
+                    // 1. 更新天数
+                    challenge.currentDay = min(newDay, 50) // 确保不超过50天
+                    
+                    // 2. 重置所有任务状态
+                    for i in 0..<challenge.tasks.count {
+                        challenge.tasks[i].isCompleted = false
+                    }
+                    
+                    // 3. 保存更改
+                    currentChallenge = challenge
+                    saveChallenge()
+                    
+                    // 4. 保存更新时间
+                    saveLastUpdateTime()
                 }
-                
-                // 3. 保存更改
-                currentChallenge = challenge
-                saveChallenge()
             }
         }
     }
@@ -64,6 +93,7 @@ class ChallengeViewModel: ObservableObject {
         currentChallenge = Challenge(tasks: tasks)
         shouldShowEditTip = true // 新建挑战时设置显示提示
         saveChallenge()
+        saveLastUpdateTime() // 保存更新时间
     }
     
     func resetChallenge() {
@@ -71,6 +101,7 @@ class ChallengeViewModel: ObservableObject {
         currentChallenge = nil
         // 清除本地存储
         userDefaults.removeObject(forKey: challengeKey)
+        userDefaults.removeObject(forKey: lastUpdateTimeKey) // 同时清除最后更新时间
     }
     
     func hideEditTip() {
@@ -169,7 +200,7 @@ class ChallengeViewModel: ObservableObject {
     }
     
     func sceneDidBecomeActive() {
-        checkChallengeStatus()
+        forceUpdate() // 使用强制更新替代普通检查
     }
 }
 
